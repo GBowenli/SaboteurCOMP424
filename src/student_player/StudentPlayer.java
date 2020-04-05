@@ -58,10 +58,10 @@ public class StudentPlayer extends SaboteurPlayer {
         boolean [] player1hiddenRevealed = new boolean[3];
 
         for(int h=0;h<3;h++){ // set player1hiddenRevealed based on whether the tiles at hiddenPos are "8" or not
-            if (board[hiddenPos[h][0]][hiddenPos[h][1]].equals(new SaboteurTile("8"))) {
-                player1hiddenRevealed[h] = true;
-            } else {
+            if (board[hiddenPos[h][0]][hiddenPos[h][1]].getName().equals("Tile:8")) {
                 player1hiddenRevealed[h] = false;
+            } else {
+                player1hiddenRevealed[h] = true;
             }
         }
 
@@ -78,7 +78,28 @@ public class StudentPlayer extends SaboteurPlayer {
             }
         }
 
-        SimulatedBoardState simulatedBoardState = new SimulatedBoardState(board, intBoard, myHand, player1Malus, player2Malus, player1hiddenRevealed, player2hiddenRevealed);
+        // set hiddenCards to the cards we know, the rest of them randomize them
+        ArrayList<String> list =new ArrayList<>();
+        list.add("hidden1");
+        list.add("hidden2");
+        list.add("nugget");
+
+        SaboteurTile[] hiddenCards = new SaboteurTile[3];
+        for (int i = 0; i < 3; i++) {
+            if (player1hiddenRevealed[i]) {
+                hiddenCards[i] = board[hiddenPos[i][0]][hiddenPos[i][1]];
+                list.remove(board[hiddenPos[i][0]][hiddenPos[i][1]].getName().substring(5));
+            }
+        }
+
+        for (int i = 0; i < 3; i++) {
+            int index = random.nextInt(list.size());
+            if (hiddenCards[i] == null) {
+                hiddenCards[i] = new SaboteurTile(list.remove(index));
+            }
+        }
+
+        SimulatedBoardState simulatedBoardState = new SimulatedBoardState(board, intBoard, myHand, player1Malus, player2Malus, player1hiddenRevealed, player2hiddenRevealed, hiddenCards);
 
         ArrayList<MCTSNode> possibleMovesChildren = new ArrayList<>();
 
@@ -101,8 +122,6 @@ public class StudentPlayer extends SaboteurPlayer {
         while (System.currentTimeMillis() - startTimeMillis < 1999) {
             tree.performSimulation();
         }
-
-        //Move myMove = tree.getBestMove();
 
         Move myMove = tree.getBestMove();
 

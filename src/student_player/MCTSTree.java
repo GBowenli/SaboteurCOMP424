@@ -4,6 +4,7 @@ import Saboteur.SaboteurBoardState;
 import Saboteur.SaboteurMove;
 import boardgame.Board;
 
+import javax.sound.midi.SysexMessage;
 import java.util.ArrayList;
 
 public class MCTSTree {
@@ -57,7 +58,8 @@ public class MCTSTree {
 
     public int simulateRandomGame(SaboteurMove moveChosen) { // returns 0 if tie, 1 if win, -1 if lost
         while(simulatedBoardState.getWinner() == Board.NOBODY) {
-            SaboteurMove m = simulatedBoardState.getRandomMove();
+            SaboteurMove m = simulatedBoardState.getSimulatedMove();
+
             simulatedBoardState.processMove(m);
         }
 
@@ -93,9 +95,11 @@ public class MCTSTree {
         double current;
         SaboteurMove bestMove = null;
 
+        System.out.println("!!!" + head.getTotalSimulations());
+
+
         for (MCTSNode node : head.getChildren()) {
             current = node.getTotalSimulations();
-            System.out.println("!!!" + current);
             if (current > best) {
                 best = current;
                 bestMove = node.getSaboteurMove();

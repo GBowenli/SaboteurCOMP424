@@ -5,10 +5,7 @@ import Saboteur.SaboteurMove;
 import Saboteur.cardClasses.*;
 import boardgame.Board;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Random;
+import java.util.*;
 
 public class SimulatedBoardState {
     public static final int BOARD_SIZE = 14;
@@ -41,7 +38,13 @@ public class SimulatedBoardState {
     public static final int TUNNEL = 1;
     public static final int WALL = 0;
 
-    public SimulatedBoardState(SaboteurTile[][] board, int[][] intBoard, ArrayList<SaboteurCard> player1Cards, int player1nbMalus, int player2nbMalus, boolean[] player1hiddenRevealed, boolean[] player2hiddenRevealed) {
+    // these four variables are used to tell which ends of the tile are continued
+    public static final int UP = 1;
+    public static final int DOWN = 2;
+    public static final int LEFT = 3;
+    public static final int RIGHT = 4;
+
+    public SimulatedBoardState(SaboteurTile[][] board, int[][] intBoard, ArrayList<SaboteurCard> player1Cards, int player1nbMalus, int player2nbMalus, boolean[] player1hiddenRevealed, boolean[] player2hiddenRevealed, SaboteurTile[] hiddenCards) {
         this.board = board;
         this.intBoard = intBoard;
         this.player1Cards = player1Cards;
@@ -51,6 +54,7 @@ public class SimulatedBoardState {
         this.player1Cards = player1Cards;
         this.player2Cards = new ArrayList<>();
 
+        // @todo remove player 1 hand from deck
         // generate random hand for player2Hand
         for(int i=0;i<7;i++){
             this.deck.remove(0);
@@ -60,33 +64,7 @@ public class SimulatedBoardState {
         this.player1nbMalus = player1nbMalus;
         this.player2nbMalus = player2nbMalus;
 
-        // initialize the hidden position:
-        ArrayList<String> list =new ArrayList<String>();
-        list.add("hidden1");
-        list.add("hidden2");
-        list.add("nugget");
-
-        int totalHiddenCardsKnown = 0;
-
-        // set hiddenCards to its actual value if player1 knows what it is
-        for (int i = 0; i < 3; i++) {
-            if (player1hiddenRevealed[i]) {
-                totalHiddenCardsKnown++;
-                list.remove(this.board[hiddenPos[i][0]][hiddenPos[i][1]].getName()); // delete the occurrence from list because we now know where the hiddenCard is
-                this.board[hiddenPos[i][0]][hiddenPos[i][1]] = this.board[hiddenPos[i][0]][hiddenPos[i][1]];
-                this.hiddenCards[i] = this.board[hiddenPos[i][0]][hiddenPos[i][1]];
-            }
-        }
-
-        // randomize the rest of the hiddenCards as player1 does not know what they are
-        Random startRand = new Random();
-        for (int i = 0; i < 3; i++) {
-            if (!player1hiddenRevealed[i]) {
-                int idx = startRand.nextInt(list.size());
-                this.board[hiddenPos[i][0]][hiddenPos[i][1]] = new SaboteurTile(list.remove(idx));
-                this.hiddenCards[i] = this.board[hiddenPos[i][0]][hiddenPos[i][1]];
-            }
-        }
+        this.hiddenCards = hiddenCards;
 
         this.rand = new Random(2019);
         this.turnPlayer = 1;
@@ -95,6 +73,265 @@ public class SimulatedBoardState {
 
         this.player1hiddenRevealed = player1hiddenRevealed;
         this.player2hiddenRevealed = player2hiddenRevealed;
+    }
+
+    // this method provides an algorithm on getting a move from a player
+    // we are not using getRandomMove to simlate the game because they always end in a draw
+    public SaboteurMove getSimulatedMove() {
+        ArrayList<SaboteurMove> moves = getAllLegalMoves();
+
+        if (this.turnPlayer == 1) { // player 1's turn
+            if (player1nbMalus > 0) { // play bonus card if player 1 has it or drop a card
+                ArrayList<SaboteurMove> dropCardMoves = new ArrayList<>();
+
+                for (SaboteurMove move : moves) {
+                    if (move.getCardPlayed().getName().equals("Bonus")) { // prioritize playing Bonus card
+                        return move;
+                    }
+
+                    if (move.getCardPlayed().getName().equals("Drop")) {
+                        dropCardMoves.add(move);
+                    }
+                }
+
+                return dropCardMoves.get(rand.nextInt(dropCardMoves.size())); // drop a random card
+            } else {
+                int distanceToGoal = distanceToGoal(board);
+
+                SaboteurMove myMove;
+
+                if (distanceToGoal == 1) { // here we try to win, if we cannot we try to sabotage
+                    myMove = findWinningMove(moves, distanceToGoal);
+                    if (myMove != null) {
+                        return myMove;
+                    } else {
+                        return sabotageOrDropCard(moves);
+                    }
+                } else if (distanceToGoal == 2) { // here we do a random move, 50% try to get closer to the goal, 50% try to sabotage or drop a card
+                    int randomNum = rand.nextInt(2);
+
+                    if (randomNum == 0) {
+                        myMove = findWinningMove(moves, distanceToGoal);
+                        if (myMove != null) {
+                            return myMove;
+                        } else {
+                            return sabotageOrDropCard(moves);
+                        }
+                    } else {
+                        return sabotageOrDropCard(moves);
+                    }
+                } else { // distanceToGoal >= 3, here we just try to get closer to the goal, or sabotage/drop a card
+                    myMove = findWinningMove(moves, distanceToGoal);
+
+                    if (myMove != null) {
+                        return myMove;
+                    } else { // if there is no winning move we have a 10% chance to sabotage or drop a card or just do a random move with 90%
+                        int randomNum = rand.nextInt(10);
+
+                        if (randomNum == 0) {
+                            return sabotageOrDropCard(moves);
+                        } else {
+                            return moves.get(rand.nextInt(moves.size()));
+                        }
+                    }
+                }
+            }
+        } else { // player 2's turn
+            if (player2nbMalus > 0) { // play bonus card if player 1 has it or drop a card
+                ArrayList<SaboteurMove> dropCardMoves = new ArrayList<>();
+
+                for (SaboteurMove move : moves) {
+                    if (move.getCardPlayed().getName().equals("Bonus")) { // prioritize playing Bonus card
+                        return move;
+                    }
+
+                    if (move.getCardPlayed().getName().equals("Drop")) {
+                        dropCardMoves.add(move);
+                    }
+                }
+
+                return dropCardMoves.get(rand.nextInt(dropCardMoves.size())); // drop a random card
+            } else {
+                int distanceToGoal = distanceToGoal(board);
+                SaboteurMove myMove;
+
+                if (distanceToGoal == 1) { // here we try to win, if we cannot we try to sabotage
+                    myMove = findWinningMove(moves, distanceToGoal);
+                    if (myMove != null) {
+                        return myMove;
+                    } else {
+                        return sabotageOrDropCard(moves);
+                    }
+                } else if (distanceToGoal == 2) { // here we do a random move, 50% try to get closer to the goal, 50% try to sabotage or drop a card
+                    int randomNum = rand.nextInt(2);
+
+                    if (randomNum == 0) {
+                        myMove = findWinningMove(moves, distanceToGoal);
+                        if (myMove != null) {
+                            return myMove;
+                        } else {
+                            return sabotageOrDropCard(moves);
+                        }
+                    } else {
+                        return sabotageOrDropCard(moves);
+                    }
+                } else { // distanceToGoal >= 3, here we just try to get closer to the goal, or sabotage/drop a card
+                    myMove = findWinningMove(moves, distanceToGoal);
+                    if (myMove != null) {
+                        return myMove;
+                    } else { // if there is no winning move we have a 10% chance to sabotage or drop a card or just do a random move with 90%
+                        int randomNum = rand.nextInt(10);
+
+                        if (randomNum == 0) {
+                            return sabotageOrDropCard(moves);
+                        } else {
+                            return moves.get(rand.nextInt(moves.size()));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // this method tries to find a move that can shorten the distance to goal if it does not find a move then it returns null
+    public SaboteurMove findWinningMove(ArrayList<SaboteurMove> moves, int currentDistanceToGoal) {
+        SaboteurTile[][] simulatedBoard = new SaboteurTile[BOARD_SIZE][BOARD_SIZE];
+
+        for (int i = 0; i < BOARD_SIZE; i++) {
+            for (int j = 0; j < BOARD_SIZE; j++) {
+                simulatedBoard[i][j] = board[i][j];
+            }
+        }
+
+        int[] positionOfTile;
+        int newDistanceToGoal;
+
+        for (SaboteurMove move : moves) {
+            if (move.getCardPlayed() instanceof SaboteurTile) {
+                positionOfTile = move.getPosPlayed();
+                simulatedBoard[positionOfTile[0]][positionOfTile[1]] = (SaboteurTile) move.getCardPlayed(); // add tile to the board
+
+                newDistanceToGoal = distanceToGoal(simulatedBoard);
+                if (newDistanceToGoal < currentDistanceToGoal) {
+                    return move;
+                }
+
+                simulatedBoard[positionOfTile[0]][positionOfTile[1]] = null; // reset the board
+            }
+        }
+        return null; // return null if winning move cannot be found
+    }
+
+    // this method returns a random move where 70% it will drop a card and 30% it will try to sabotage the game
+    public SaboteurMove sabotageOrDropCard(ArrayList<SaboteurMove> moves) {
+        int randomNum = rand.nextInt(10);
+        ArrayList<SaboteurMove> dropMoves = new ArrayList<>();
+        ArrayList<SaboteurMove> sabotageMoves = new ArrayList<>();
+
+        for (SaboteurMove move : moves) {
+            if (move.getCardPlayed().getName().equals("Drop")) {
+                dropMoves.add(move);
+            } else if (move.getCardPlayed().getName().equals("Destroy")) {
+                sabotageMoves.add(move);
+            }
+        }
+
+        if (randomNum < 3) { // 30% chance sabotage
+            if (sabotageMoves.size() == 0) {
+                return dropMoves.get(rand.nextInt(dropMoves.size())); // if there are no sabotage mvoes, perform a random drop move
+            } else {
+                return sabotageMoves.get(rand.nextInt(sabotageMoves.size())); // random sabotage move
+            }
+        } else { // 70% chance drop a card
+            return dropMoves.get(rand.nextInt(dropMoves.size())); // random drop move
+        }
+    }
+
+    // this method returns shortest distance to the nugget from all tiles on the board
+    public int distanceToGoal(SaboteurTile[][] simulatedBoard){
+        int[] nuggetPosition = new int[2];
+        int shortestDistance = BOARD_SIZE*2;
+        int currentDistance = BOARD_SIZE*2;
+
+        for (int i = 0; i < 3; i++) {
+            if (hiddenCards[i].getName().equals("nugget")) {
+                nuggetPosition[0] = hiddenPos[i][0];
+                nuggetPosition[1] = hiddenPos[i][1];
+            }
+        }
+
+        ArrayList<Integer> connectedEnds;
+
+        for (int i = 0; i < BOARD_SIZE; i++) {
+            for (int j = 0; j < BOARD_SIZE; j++) {
+                if (simulatedBoard[i][j] != null) {
+                    connectedEnds = checkConnectedEnds(simulatedBoard[i][j]);
+
+                    for (Integer connectedEnd : connectedEnds) {
+                        if (connectedEnd == UP) { // hard to calculate this one because would have to go all the way around the map, therefore we ignore this one for now
+                            if (j+1 <= BOARD_SIZE) {
+                                if (simulatedBoard[i][j+1] == null) {
+                                }
+                            }
+                        } else if (connectedEnd == DOWN) {
+                            if (j-1 >= 0) {
+                                if (simulatedBoard[i][j-1] == null) {
+                                    currentDistance = estimatedDistanceBetweenTwoPoints(i, j-1, nuggetPosition[0], nuggetPosition[1]);
+                                }
+                            }
+                        } else if (connectedEnd == LEFT) {
+                            if (i-1 >= 0) {
+                                if (simulatedBoard[i-1][j] == null) {
+                                    currentDistance = estimatedDistanceBetweenTwoPoints(i-1, j, nuggetPosition[0], nuggetPosition[1]);
+                                }
+                            }
+                        } else if (connectedEnd == RIGHT) {
+                            if (i+1 >= BOARD_SIZE) {
+                                if (simulatedBoard[i + 1][j] == null) {
+                                    currentDistance = estimatedDistanceBetweenTwoPoints(i + 1, j, nuggetPosition[0], nuggetPosition[1]);
+                                }
+                            }
+                        }
+                    }
+
+                    if (currentDistance < shortestDistance) {
+                        shortestDistance = currentDistance;
+                    }
+                }
+            }
+        }
+        return shortestDistance;
+    }
+
+    // this method estimates the distance between 2 points on the map
+    public int estimatedDistanceBetweenTwoPoints (int x1, int y1, int x2, int y2) {
+        return Math.abs(x2-x1) + Math.abs(y2-y1);
+    }
+
+    // this method returns all the ends that can be connected by the saboteurTile
+    public ArrayList<Integer> checkConnectedEnds (SaboteurTile saboteurTile) {
+        int[][] tilePath = saboteurTile.getPath();
+        ArrayList<Integer> connectedEnds = new ArrayList<>();
+
+        if (tilePath[1][1] == 1) {
+            if (tilePath[1][2] == 1) {
+                connectedEnds.add(UP);
+            }
+
+            if (tilePath[1][0] == 1) {
+                connectedEnds.add(DOWN);
+            }
+
+            if (tilePath[0][1] == 1) {
+                connectedEnds.add(LEFT);
+            }
+
+            if (tilePath[2][1] == 1) {
+                connectedEnds.add(RIGHT);
+            }
+        }
+
+        return connectedEnds;
     }
 
     public ArrayList<int[]> possiblePositions(SaboteurTile card) {
