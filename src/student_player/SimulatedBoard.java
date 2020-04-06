@@ -46,7 +46,7 @@ public class SimulatedBoard {
                     return move;
                 }
 
-                if (move.getCardPlayed().getName().equals("Drop")) {
+                if (move.getCardPlayed().getName().contains("Drop")) {
                     dropCardMoves.add(move);
                 }
             }
@@ -92,7 +92,7 @@ public class SimulatedBoard {
                         }
                     }
                 } else if (end == DOWN) {
-                    if (tileNodePositions[0] + 1 <= BOARD_SIZE) {
+                    if (tileNodePositions[0] + 1 < BOARD_SIZE) {
                         int[] newPositions = new int[]{tileNodePositions[0] + 1, tileNodePositions[1]};
 
                         if (board[newPositions[0]][newPositions[1]] != null) {
@@ -118,7 +118,7 @@ public class SimulatedBoard {
                         }
                     }
                 } else if (end == RIGHT) {
-                    if (tileNodePositions[1] + 1 <= BOARD_SIZE) {
+                    if (tileNodePositions[1] + 1 < BOARD_SIZE) {
                         int[] newPositions = new int[]{tileNodePositions[0], tileNodePositions[1] + 1};
 
                         if (board[newPositions[0]][newPositions[1]] != null) {
@@ -161,10 +161,16 @@ public class SimulatedBoard {
         PriorityQueue<TileNodeAStar> priorityQueue = new PriorityQueue<>(comparator);
         priorityQueue.add(new TileNodeAStar(currentPosition, calculateHeuristic(currentPosition, nuggetPosition), 0));
 
-        while (!priorityQueue.peek().getPosition().equals(nuggetPosition)) {
+        // this 2d array keeps track of which tiles are already visited
+        boolean[][] visited = new boolean[BOARD_SIZE][BOARD_SIZE];
+        visited[currentPosition[0]][currentPosition[1]] = true; // initialize visited
+
+        while (!Arrays.equals(priorityQueue.peek().getPosition(), nuggetPosition)) {
             // dequeue top of priority queue
             TileNodeAStar head = priorityQueue.poll();
             int[] headPositions = head.getPosition();
+
+            //System.out.println("!" + headPositions[0] + "!" + headPositions[1]);
 
             // this will only run on the first iteration of the algorithm
             // this makes sure we don't go down paths that are not possible due to the tile's configuration
@@ -176,29 +182,74 @@ public class SimulatedBoard {
                     if (end == UP) {
                         if (headPositions[0] - 1 >= 0) {
                             int[] newPositions = new int[]{headPositions[0] - 1, headPositions[1]};
-                            if (board[newPositions[0]][newPositions[1]] == null) {
-                                priorityQueue.add(new TileNodeAStar(newPositions, head.getPathCost() + 1, calculateHeuristic(newPositions, nuggetPosition)));
+
+                            if (!visited[newPositions[0]][newPositions[1]]) {
+                                // check if newPositions is equal to one of hiddenPos
+                                boolean isHiddenTile = false;
+                                for (int i = 0; i < 3; i++) {
+                                    if (Arrays.equals(newPositions, hiddenPos[i])) {
+                                        isHiddenTile = true;
+                                    }
+                                }
+
+                                if (board[newPositions[0]][newPositions[1]] == null || isHiddenTile) {
+                                    priorityQueue.add(new TileNodeAStar(newPositions, calculateHeuristic(newPositions, nuggetPosition), head.getPathCost() + 1));
+                                    visited[newPositions[0]][newPositions[1]] = true;
+                                }
                             }
                         }
                     } else if (end == DOWN) {
-                        if (headPositions[0] + 1 <= BOARD_SIZE) {
+                        if (headPositions[0] + 1 < BOARD_SIZE) {
                             int[] newPositions = new int[]{headPositions[0] + 1, headPositions[1]};
-                            if (board[newPositions[0]][newPositions[1]] == null) {
-                                priorityQueue.add(new TileNodeAStar(newPositions, head.getPathCost() + 1, calculateHeuristic(newPositions, nuggetPosition)));
+
+                            if (!visited[newPositions[0]][newPositions[1]]) {
+                                // check if newPositions is equal to one of hiddenPos
+                                boolean isHiddenTile = false;
+                                for (int i = 0; i < 3; i++) {
+                                    if (Arrays.equals(newPositions, hiddenPos[i])) {
+                                        isHiddenTile = true;
+                                    }
+                                }
+                                if (board[newPositions[0]][newPositions[1]] == null || isHiddenTile) {
+                                    priorityQueue.add(new TileNodeAStar(newPositions, calculateHeuristic(newPositions, nuggetPosition), head.getPathCost() + 1));
+                                    visited[newPositions[0]][newPositions[1]] = true;
+                                }
                             }
                         }
                     } else if (end == LEFT) {
                         if (headPositions[1] - 1 >= 0) {
                             int[] newPositions = new int[]{headPositions[0], headPositions[1] - 1};
-                            if (board[newPositions[0]][newPositions[1]] == null) {
-                                priorityQueue.add(new TileNodeAStar(newPositions, head.getPathCost() + 1, calculateHeuristic(newPositions, nuggetPosition)));
+
+                            if (!visited[newPositions[0]][newPositions[1]]) {
+                                // check if newPositions is equal to one of hiddenPos
+                                boolean isHiddenTile = false;
+                                for (int i = 0; i < 3; i++) {
+                                    if (Arrays.equals(newPositions, hiddenPos[i])) {
+                                        isHiddenTile = true;
+                                    }
+                                }
+                                if (board[newPositions[0]][newPositions[1]] == null || isHiddenTile) {
+                                    priorityQueue.add(new TileNodeAStar(newPositions, calculateHeuristic(newPositions, nuggetPosition), head.getPathCost() + 1));
+                                    visited[newPositions[0]][newPositions[1]] = true;
+                                }
                             }
                         }
                     } else if (end == RIGHT) {
-                        if (headPositions[1] + 1 <= BOARD_SIZE) {
+                        if (headPositions[1] + 1 < BOARD_SIZE) {
                             int[] newPositions = new int[]{headPositions[0], headPositions[1] + 1};
-                            if (board[newPositions[0]][newPositions[1]] == null) {
-                                priorityQueue.add(new TileNodeAStar(newPositions, head.getPathCost() + 1, calculateHeuristic(newPositions, nuggetPosition)));
+
+                            if (!visited[newPositions[0]][newPositions[1]]) {
+                                // check if newPositions is equal to one of hiddenPos
+                                boolean isHiddenTile = false;
+                                for (int i = 0; i < 3; i++) {
+                                    if (Arrays.equals(newPositions, hiddenPos[i])) {
+                                        isHiddenTile = true;
+                                    }
+                                }
+                                if (board[newPositions[0]][newPositions[1]] == null || isHiddenTile) {
+                                    priorityQueue.add(new TileNodeAStar(newPositions, calculateHeuristic(newPositions, nuggetPosition), head.getPathCost() + 1));
+                                    visited[newPositions[0]][newPositions[1]] = true;
+                                }
                             }
                         }
                     }
@@ -206,29 +257,75 @@ public class SimulatedBoard {
             } else {
                 if (headPositions[0] - 1 >= 0) {
                     int[] newPositions = new int[]{headPositions[0] - 1, headPositions[1]};
-                    if (board[newPositions[0]][newPositions[1]] == null) {
-                        priorityQueue.add(new TileNodeAStar(newPositions, head.getPathCost() + 1, calculateHeuristic(newPositions, nuggetPosition)));
+
+                    if (!visited[newPositions[0]][newPositions[1]]) {
+                        // check if newPositions is equal to one of hiddenPos
+                        boolean isHiddenTile = false;
+                        for (int i = 0; i < 3; i++) {
+                            if (Arrays.equals(newPositions, hiddenPos[i])) {
+                                isHiddenTile = true;
+                            }
+                        }
+                        if (board[newPositions[0]][newPositions[1]] == null || isHiddenTile) {
+                            priorityQueue.add(new TileNodeAStar(newPositions, calculateHeuristic(newPositions, nuggetPosition), head.getPathCost() + 1));
+                            visited[newPositions[0]][newPositions[1]] = true;
+                        }
                     }
                 }
 
-                if (headPositions[0] + 1 <= BOARD_SIZE) {
+                if (headPositions[0] + 1 < BOARD_SIZE) {
                     int[] newPositions = new int[]{headPositions[0] + 1, headPositions[1]};
-                    if (board[newPositions[0]][newPositions[1]] == null) {
-                        priorityQueue.add(new TileNodeAStar(newPositions, head.getPathCost() + 1, calculateHeuristic(newPositions, nuggetPosition)));
+
+                    if (!visited[newPositions[0]][newPositions[1]]) {
+                        // check if newPositions is equal to one of hiddenPos
+                        boolean isHiddenTile = false;
+                        for (int i = 0; i < 3; i++) {
+                            if (Arrays.equals(newPositions, hiddenPos[i])) {
+                                isHiddenTile = true;
+
+                            }
+                        }
+                        if (board[newPositions[0]][newPositions[1]] == null || isHiddenTile) {
+                            priorityQueue.add(new TileNodeAStar(newPositions, calculateHeuristic(newPositions, nuggetPosition), head.getPathCost() + 1));
+                            visited[newPositions[0]][newPositions[1]] = true;
+                        }
                     }
                 }
 
                 if (headPositions[1] - 1 >= 0) {
                     int[] newPositions = new int[]{headPositions[0], headPositions[1] - 1};
-                    if (board[newPositions[0]][newPositions[1]] == null) {
-                        priorityQueue.add(new TileNodeAStar(newPositions, head.getPathCost() + 1, calculateHeuristic(newPositions, nuggetPosition)));
+
+                    if (!visited[newPositions[0]][newPositions[1]]) {
+                        // check if newPositions is equal to one of hiddenPos
+                        boolean isHiddenTile = false;
+                        for (int i = 0; i < 3; i++) {
+                            if (Arrays.equals(newPositions, hiddenPos[i])) {
+                                isHiddenTile = true;
+
+                            }
+                        }
+                        if (board[newPositions[0]][newPositions[1]] == null || isHiddenTile) {
+                            priorityQueue.add(new TileNodeAStar(newPositions, calculateHeuristic(newPositions, nuggetPosition), head.getPathCost() + 1));
+                            visited[newPositions[0]][newPositions[1]] = true;
+                        }
                     }
                 }
 
-                if (headPositions[1] + 1 <= BOARD_SIZE) {
+                if (headPositions[1] + 1 < BOARD_SIZE) {
                     int[] newPositions = new int[]{headPositions[0], headPositions[1] + 1};
-                    if (board[newPositions[0]][newPositions[1]] == null) {
-                        priorityQueue.add(new TileNodeAStar(newPositions, head.getPathCost() + 1, calculateHeuristic(newPositions, nuggetPosition)));
+
+                    if (!visited[newPositions[0]][newPositions[1]]) {
+                        // check if newPositions is equal to one of hiddenPos
+                        boolean isHiddenTile = false;
+                        for (int i = 0; i < 3; i++) {
+                            if (Arrays.equals(newPositions, hiddenPos[i])) {
+                                isHiddenTile = true;
+                            }
+                        }
+                        if (board[newPositions[0]][newPositions[1]] == null || isHiddenTile) {
+                            priorityQueue.add(new TileNodeAStar(newPositions, calculateHeuristic(newPositions, nuggetPosition), head.getPathCost() + 1));
+                            visited[newPositions[0]][newPositions[1]] = true;
+                        }
                     }
                 }
             }
