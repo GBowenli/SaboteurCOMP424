@@ -98,8 +98,12 @@ public class StudentPlayer extends SaboteurPlayer {
         SimulatedBoard simulatedBoard = new SimulatedBoard(board, intBoard, playerMalus, playerHiddenRevealed, hiddenCards, allLegalMoves);
 
         //Move myMove = simulatedBoard.getIdealMove();
+        System.out.println("!!!" + simulatedBoard.getAllLeaves().size());
+        for (TileNodeBFS node : simulatedBoard.getAllLeaves()) {
+            System.out.println("!!!" + node.getPosition()[0] + "???" + node.getPosition()[1]);
+        }
 
-        System.out.println(boardState.toString());
+
         Move myMove = boardState.getRandomMove();
 
         // Return your move to be processed by the server.

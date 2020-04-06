@@ -60,8 +60,8 @@ public class SimulatedBoard {
 
     // this method returns all the leaves of the board (ends that can still be expanded upon)
     // this method uses breadth first search algorithm
-    public ArrayList<SaboteurTile> getAllLeaves() {
-        ArrayList<SaboteurTile> leaves = new ArrayList<>();
+    public ArrayList<TileNodeBFS> getAllLeaves() {
+        ArrayList<TileNodeBFS> leaves = new ArrayList<>();
         Queue<TileNodeBFS> linkedList = new LinkedList<>();
         linkedList.add(new TileNodeBFS(board[5][5], new int[]{5, 5})); // add the initial piece to the queue
 
@@ -71,21 +71,24 @@ public class SimulatedBoard {
 
         while(linkedList.size() > 0) {
             TileNodeBFS tileNode = linkedList.poll();
+
             int[] tileNodePositions = tileNode.getPosition();
 
             ArrayList<Integer> connectedEnds = checkConnectedEnds(tileNode.getTile());
 
-            boolean addedNodes = false;
+            boolean hasUnusedEnds = false;
             for (Integer end : connectedEnds) {
                 if (end == UP) {
                     if (tileNodePositions[0] - 1 >= 0) {
                         int[] newPositions = new int[]{tileNodePositions[0] - 1, tileNodePositions[1]};
 
                         if (board[newPositions[0]][newPositions[1]] != null) {
-                            if (board[newPositions[0]][newPositions[1]].getPath()[1][1] != 0) { // checks if the tile is connected in the middle
+                            if (!visited[newPositions[0]][newPositions[1]]) {
                                 linkedList.add(new TileNodeBFS(board[newPositions[0]][newPositions[1]], newPositions));
-                                addedNodes = true;
+                                visited[newPositions[0]][newPositions[1]] = true;
                             }
+                        } else {
+                            hasUnusedEnds = true;
                         }
                     }
                 } else if (end == DOWN) {
@@ -93,10 +96,12 @@ public class SimulatedBoard {
                         int[] newPositions = new int[]{tileNodePositions[0] + 1, tileNodePositions[1]};
 
                         if (board[newPositions[0]][newPositions[1]] != null) {
-                            if (board[newPositions[0]][newPositions[1]].getPath()[1][1] != 0) { // checks if the tile is connected in the middle
+                            if (!visited[newPositions[0]][newPositions[1]]) {
                                 linkedList.add(new TileNodeBFS(board[newPositions[0]][newPositions[1]], newPositions));
-                                addedNodes = true;
+                                visited[newPositions[0]][newPositions[1]] = true;
                             }
+                        } else {
+                            hasUnusedEnds = true;
                         }
                     }
                 } else if (end == LEFT) {
@@ -104,10 +109,12 @@ public class SimulatedBoard {
                         int[] newPositions = new int[]{tileNodePositions[0], tileNodePositions[1] - 1};
 
                         if (board[newPositions[0]][newPositions[1]] != null) {
-                            if (board[newPositions[0]][newPositions[1]].getPath()[1][1] != 0) { // checks if the tile is connected in the middle
+                            if (!visited[newPositions[0]][newPositions[1]]) {
                                 linkedList.add(new TileNodeBFS(board[newPositions[0]][newPositions[1]], newPositions));
-                                addedNodes = true;
+                                visited[newPositions[0]][newPositions[1]] = true;
                             }
+                        } else {
+                            hasUnusedEnds = true;
                         }
                     }
                 } else if (end == RIGHT) {
@@ -115,18 +122,21 @@ public class SimulatedBoard {
                         int[] newPositions = new int[]{tileNodePositions[0], tileNodePositions[1] + 1};
 
                         if (board[newPositions[0]][newPositions[1]] != null) {
-                            if (board[newPositions[0]][newPositions[1]].getPath()[1][1] != 0) { // checks if the tile is connected in the middle
+                            if (!visited[newPositions[0]][newPositions[1]]) {
                                 linkedList.add(new TileNodeBFS(board[newPositions[0]][newPositions[1]], newPositions));
-                                addedNodes = true;
+                                visited[newPositions[0]][newPositions[1]] = true;
                             }
+                        } else {
+                            hasUnusedEnds = true;
                         }
                     }
                 }
             }
 
-            // if we did not add any tiles, this means that the node is a leaf
-            if (!addedNodes) {
-                leaves.add(tileNode.getTile());
+
+            // if there are any unused ends, that means it is a leaf
+            if (hasUnusedEnds) {
+                leaves.add(tileNode);
             }
         }
 
