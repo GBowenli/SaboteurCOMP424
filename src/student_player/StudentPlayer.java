@@ -33,11 +33,9 @@ public class StudentPlayer extends SaboteurPlayer {
      * make decisions.
      */
     public Move chooseMove(SaboteurBoardState boardState) {
-        long startTimeMillis = System.currentTimeMillis();
         ArrayList<SaboteurMove> allLegalMoves = boardState.getAllLegalMoves();
 
         // copy all information from the boardState
-        ArrayList<SaboteurCard> myHand = new ArrayList<>(boardState.getCurrentPlayerCards());
         SaboteurTile[][] board = new SaboteurTile[14][14];
         for(int i=0; i<board.length; i++) {
             for (int j = 0; j < board[i].length; j++) {
@@ -51,30 +49,15 @@ public class StudentPlayer extends SaboteurPlayer {
             }
         }
 
-        int playerNum = boardState.getTurnPlayer();
-        int player1Malus = boardState.getNbMalus(playerNum);
-        int player2Malus = boardState.getNbMalus(1 - playerNum);
+        int playerMalus = boardState.getNbMalus(boardState.getTurnPlayer());
 
-        boolean [] player1hiddenRevealed = new boolean[3];
+        boolean [] playerHiddenRevealed = new boolean[3];
 
         for(int h=0;h<3;h++){ // set player1hiddenRevealed based on whether the tiles at hiddenPos are "8" or not
             if (board[hiddenPos[h][0]][hiddenPos[h][1]].getName().equals("Tile:8")) {
-                player1hiddenRevealed[h] = false;
+                playerHiddenRevealed[h] = false;
             } else {
-                player1hiddenRevealed[h] = true;
-            }
-        }
-
-        // randomize player2hideenRealed to have fair simulations where player 2 can have randomized hidden revealed values
-        boolean[] player2hiddenRevealed = new boolean[3];
-        Random random = new Random();
-        int randomValue;
-        for (int i = 0; i < 3; i++) {
-            randomValue = random.nextInt(2);
-            if (randomValue == 0) {
-                player2hiddenRevealed[i] = true;
-            } else { // equals 1
-                player2hiddenRevealed[i] = false;
+                playerHiddenRevealed[h] = true;
             }
         }
 
@@ -85,45 +68,39 @@ public class StudentPlayer extends SaboteurPlayer {
         list.add("nugget");
 
         SaboteurTile[] hiddenCards = new SaboteurTile[3];
+        boolean knowNuggetLocation = false;
+
         for (int i = 0; i < 3; i++) {
-            if (player1hiddenRevealed[i]) {
-                hiddenCards[i] = board[hiddenPos[i][0]][hiddenPos[i][1]];
-                list.remove(board[hiddenPos[i][0]][hiddenPos[i][1]].getName().substring(5));
+            if (playerHiddenRevealed[i]) {
+                if (board[hiddenPos[i][0]][hiddenPos[i][1]].getName().substring(5).equals("nugget")) {
+                    knowNuggetLocation = true;
+                    hiddenCards[i] = new SaboteurTile("nugget");
+                }
             }
         }
 
-        for (int i = 0; i < 3; i++) {
-            int index = random.nextInt(list.size());
-            if (hiddenCards[i] == null) {
-                hiddenCards[i] = new SaboteurTile(list.remove(index));
+        boolean firstHiddenSet = false;
+        if (knowNuggetLocation) {
+            for (int i = 0; i < 3; i++) {
+                if (hiddenCards[i] == null) {
+                    if (!firstHiddenSet) {
+                        firstHiddenSet = true;
+                        hiddenCards[i] = new SaboteurTile("hidden1");
+                    } else {
+                        hiddenCards[i] = new SaboteurTile("hidden2");
+                    }
+                }
             }
+        } else {
+            hiddenCards = new SaboteurTile[]{new SaboteurTile("hidden1"), new SaboteurTile("nugget"), new SaboteurTile("hidden2")};
         }
 
-        SimulatedBoardState simulatedBoardState = new SimulatedBoardState(board, intBoard, myHand, player1Malus, player2Malus, player1hiddenRevealed, player2hiddenRevealed, hiddenCards);
+        SimulatedBoard simulatedBoard = new SimulatedBoard(board, intBoard, playerMalus, playerHiddenRevealed, hiddenCards, allLegalMoves);
 
-        ArrayList<MCTSNode> possibleMovesChildren = new ArrayList<>();
+        //Move myMove = simulatedBoard.getIdealMove();
 
-        for (SaboteurMove move : allLegalMoves) {
-            possibleMovesChildren.add(new MCTSNode(move));
-        }
-
-        MCTSTree tree = new MCTSTree(possibleMovesChildren, simulatedBoardState);
-        //if (firstExecution) {
-        //    while (System.currentTimeMillis() - startTimeMillis < 29998) { // 30 seconds
-
-        //    }
-         //   firstExecution = false;
-        //} else {
-            //while (System.currentTimeMillis() - startTimeMillis < 1998) { // 2 seconds
-
-            //}
-        //}
-
-        while (System.currentTimeMillis() - startTimeMillis < 1999) {
-            tree.performSimulation();
-        }
-
-        Move myMove = tree.getBestMove();
+        System.out.println(boardState.toString());
+        Move myMove = boardState.getRandomMove();
 
         // Return your move to be processed by the server.
         return myMove;
