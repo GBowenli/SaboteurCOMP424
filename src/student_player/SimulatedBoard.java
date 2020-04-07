@@ -15,6 +15,7 @@ public class SimulatedBoard {
     private SaboteurTile[] hiddenTiles;
     private ArrayList<SaboteurMove> allLegalMoves;
     private Random rand;
+    private boolean certainNuggetLocation;
 
     public static final int BOARD_SIZE = 14;
     public static final int originPos = 5;
@@ -29,13 +30,14 @@ public class SimulatedBoard {
     public static final int LEFT = 3;
     public static final int RIGHT = 4;
 
-    public SimulatedBoard(SaboteurTile[][] board, int[][] intBoard, int playerMalus, boolean[] playerHiddenRevealed, SaboteurTile[] hiddenTiles, ArrayList<SaboteurMove> allLegalMoves) {
+    public SimulatedBoard(SaboteurTile[][] board, int[][] intBoard, int playerMalus, boolean[] playerHiddenRevealed, SaboteurTile[] hiddenTiles, ArrayList<SaboteurMove> allLegalMoves, boolean certainNuggetLocation) {
         this.board = board;
         this.intBoard = intBoard;
         this.playerMalus = playerMalus;
         this.playerHiddenRevealed = playerHiddenRevealed;
         this.hiddenTiles = hiddenTiles;
         this.allLegalMoves = allLegalMoves;
+        this.certainNuggetLocation = certainNuggetLocation;
         this.rand = new Random(2019);
     }
 
@@ -55,16 +57,7 @@ public class SimulatedBoard {
 
             return dropCardMoves.get(rand.nextInt(dropCardMoves.size())); // drop a random card
         } else {
-            boolean nuggetFound = false;
-            for (int i = 0; i < 3; i++) {
-                if (playerHiddenRevealed[i]) {
-                    if (board[hiddenPos[i][0]][hiddenPos[i][1]].getName().contains("nugget")) {
-                        nuggetFound = true;
-                    }
-                }
-            }
-
-            if (nuggetFound) {
+            if (certainNuggetLocation) { // if we are certain of the nugget's location
                 int currentDistanceToGoal = findCurrentShortestDistanceToGoal(); // this is the current shortest distance to the nugget
 
                 SaboteurMove move = shortenDistanceToGoal(currentDistanceToGoal); // this is will return a move if there is a mvoe that can shorten the distance to the nugget
@@ -74,7 +67,7 @@ public class SimulatedBoard {
                 } else {
                     return allLegalMoves.get(rand.nextInt(allLegalMoves.size()));
                 }
-            } else {
+            } else { // if we are not certain of the nugget's location, play a map card if possible
                 SaboteurMove move = playRandomMapCard();
 
                 if (move != null) {

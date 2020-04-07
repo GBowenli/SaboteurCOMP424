@@ -68,39 +68,94 @@ public class StudentPlayer extends SaboteurPlayer {
         list.add("nugget");
 
         SaboteurTile[] hiddenCards = new SaboteurTile[3];
-        boolean knowNuggetLocation = false;
 
+        int nuggetIndex = -1;
         for (int i = 0; i < 3; i++) {
             if (playerHiddenRevealed[i]) {
-                if (board[hiddenPos[i][0]][hiddenPos[i][1]].getName().substring(5).equals("nugget")) {
-                    knowNuggetLocation = true;
-                    hiddenCards[i] = new SaboteurTile("nugget");
+                if (board[hiddenPos[i][0]][hiddenPos[i][1]].getName().contains("nugget")) {
+                    nuggetIndex = i;
                 }
             }
         }
 
-        boolean firstHiddenSet = false;
-        if (knowNuggetLocation) {
-            for (int i = 0; i < 3; i++) {
-                if (hiddenCards[i] == null) {
-                    if (!firstHiddenSet) {
-                        firstHiddenSet = true;
-                        hiddenCards[i] = new SaboteurTile("hidden1");
-                    } else {
-                        hiddenCards[i] = new SaboteurTile("hidden2");
-                    }
-                }
-            }
-        } else {
+        boolean certainNuggetLocation = false; // this variable tracks if we are certain where we placed the nugget
+
+        // there are 8 different combinations of the booleans of playerHiddenRevealed
+        // this part checks every configuration and infers hiddenCards based on this information
+        if (!playerHiddenRevealed[0] && !playerHiddenRevealed[1] && !playerHiddenRevealed[2]) {
             hiddenCards = new SaboteurTile[]{new SaboteurTile("hidden1"), new SaboteurTile("nugget"), new SaboteurTile("hidden2")};
+        } else if (playerHiddenRevealed[0] && !playerHiddenRevealed[1] && !playerHiddenRevealed[2]) {
+            if (nuggetIndex != 0) { // we don't know where the nugget is
+                hiddenCards = new SaboteurTile[]{new SaboteurTile("hidden1"), new SaboteurTile("nugget"), new SaboteurTile("hidden2")};
+            } else { // we know where the nugget is and it is at index 0
+                hiddenCards = new SaboteurTile[]{new SaboteurTile("nugget"), new SaboteurTile("hidden1"), new SaboteurTile("hidden2")};
+                certainNuggetLocation = true;
+            }
+        } else if (!playerHiddenRevealed[0] && playerHiddenRevealed[1] && !playerHiddenRevealed[2]) {
+            if (nuggetIndex != 1) { // we don't know where the nugget is
+                hiddenCards = new SaboteurTile[]{new SaboteurTile("nugget"), new SaboteurTile("hidden1"), new SaboteurTile("hidden2")};
+            } else { // we know where the nugget is and it is at index 1
+                hiddenCards = new SaboteurTile[]{new SaboteurTile("hidden1"), new SaboteurTile("nugget"), new SaboteurTile("hidden2")};
+                certainNuggetLocation = true;
+            }
+        } else if (!playerHiddenRevealed[0] && !playerHiddenRevealed[1] && playerHiddenRevealed[2]) {
+            if (nuggetIndex != 2) { // we don't know where the nugget is
+                hiddenCards = new SaboteurTile[]{new SaboteurTile("hidden1"), new SaboteurTile("nugget"), new SaboteurTile("hidden2")};
+            } else { // we know where the nugget is and it is at index 2
+                hiddenCards = new SaboteurTile[]{new SaboteurTile("hidden1"), new SaboteurTile("hidden2"), new SaboteurTile("nugget")};
+                certainNuggetLocation = true;
+            }
+        } else if (!playerHiddenRevealed[0] && playerHiddenRevealed[1] && playerHiddenRevealed[2]) {
+            if (nuggetIndex == 1) {
+                hiddenCards = new SaboteurTile[]{new SaboteurTile("hidden1"), new SaboteurTile("nugget"), new SaboteurTile("hidden2")};
+            } else if (nuggetIndex == 2) {
+                hiddenCards = new SaboteurTile[]{new SaboteurTile("hidden1"), new SaboteurTile("hidden2"), new SaboteurTile("nugget")};
+            } else {
+                hiddenCards = new SaboteurTile[]{new SaboteurTile("nugget"), new SaboteurTile("hidden1"), new SaboteurTile("hidden2")};
+            }
+            certainNuggetLocation = true;
+        } else if (playerHiddenRevealed[0] && !playerHiddenRevealed[1] && playerHiddenRevealed[2]) {
+            if (nuggetIndex == 0) {
+                hiddenCards = new SaboteurTile[]{new SaboteurTile("nugget"), new SaboteurTile("hidden1"), new SaboteurTile("hidden2")};
+            } else if (nuggetIndex == 2) {
+                hiddenCards = new SaboteurTile[]{new SaboteurTile("hidden1"), new SaboteurTile("hidden2"), new SaboteurTile("nugget")};
+            } else {
+                hiddenCards = new SaboteurTile[]{new SaboteurTile("hidden1"), new SaboteurTile("nugget"), new SaboteurTile("hidden2")};
+            }
+            certainNuggetLocation = true;
+        } else if (playerHiddenRevealed[0] && playerHiddenRevealed[1] && !playerHiddenRevealed[2]) {
+            if (nuggetIndex == 0) {
+                hiddenCards = new SaboteurTile[]{new SaboteurTile("nugget"), new SaboteurTile("hidden1"), new SaboteurTile("hidden2")};
+            } else if (nuggetIndex == 1) {
+                hiddenCards = new SaboteurTile[]{new SaboteurTile("hidden1"), new SaboteurTile("nugget"), new SaboteurTile("hidden2")};
+            } else {
+                hiddenCards = new SaboteurTile[]{new SaboteurTile("hidden1"), new SaboteurTile("hidden2"), new SaboteurTile("nugget")};
+            }
+            certainNuggetLocation = true;
+        } else { // playerHiddenRevealed[0] && playerHiddenRevealed[1] && playerHiddenRevealed[2]
+            hiddenCards = new SaboteurTile[]{board[hiddenPos[0][0]][hiddenPos[0][1]], board[hiddenPos[1][0]][hiddenPos[1][1]], board[hiddenPos[2][0]][hiddenPos[2][1]]};
+            certainNuggetLocation = true;
         }
 
-        SimulatedBoard simulatedBoard = new SimulatedBoard(board, intBoard, playerMalus, playerHiddenRevealed, hiddenCards, allLegalMoves);
+//        boolean firstHiddenSet = false;
+//        if (knowNuggetLocation) {
+//            for (int i = 0; i < 3; i++) {
+//                if (hiddenCards[i] == null) {
+//                    if (!firstHiddenSet) {
+//                        firstHiddenSet = true;
+//                        hiddenCards[i] = new SaboteurTile("hidden1");
+//                    } else {
+//                        hiddenCards[i] = new SaboteurTile("hidden2");
+//                    }
+//                }
+//            }
+//        } else {
+//            hiddenCards = new SaboteurTile[]{new SaboteurTile("hidden1"), new SaboteurTile("nugget"), new SaboteurTile("hidden2")};
+//        }
+
+        SimulatedBoard simulatedBoard = new SimulatedBoard(board, intBoard, playerMalus, playerHiddenRevealed, hiddenCards, allLegalMoves, certainNuggetLocation);
 
         SaboteurMove myMove = simulatedBoard.getIdealMove();
-
-        //SaboteurMove myMove = boardState.getRandomMove();
-
 
         // Return your move to be processed by the server.
         return myMove;
