@@ -3,6 +3,7 @@ package student_player;
 import Saboteur.SaboteurMove;
 import Saboteur.cardClasses.SaboteurMap;
 import Saboteur.cardClasses.SaboteurTile;
+import sun.plugin2.message.ShowStatusMessage;
 
 import java.lang.reflect.Array;
 import java.util.*;
@@ -10,7 +11,8 @@ import java.util.*;
 public class SimulatedBoard {
     private SaboteurTile[][] board;
     private int[][] intBoard;
-    private int playerMalus;
+    private int player1Malus;
+    private int player2Malus;
     private boolean[] playerHiddenRevealed;
     private SaboteurTile[] hiddenTiles;
     private ArrayList<SaboteurMove> allLegalMoves;
@@ -30,10 +32,11 @@ public class SimulatedBoard {
     public static final int LEFT = 3;
     public static final int RIGHT = 4;
 
-    public SimulatedBoard(SaboteurTile[][] board, int[][] intBoard, int playerMalus, boolean[] playerHiddenRevealed, SaboteurTile[] hiddenTiles, ArrayList<SaboteurMove> allLegalMoves, boolean certainNuggetLocation) {
+    public SimulatedBoard(SaboteurTile[][] board, int[][] intBoard, int player1Malus, int player2Malus, boolean[] playerHiddenRevealed, SaboteurTile[] hiddenTiles, ArrayList<SaboteurMove> allLegalMoves, boolean certainNuggetLocation) {
         this.board = board;
         this.intBoard = intBoard;
-        this.playerMalus = playerMalus;
+        this.player1Malus = player1Malus;
+        this.player2Malus = player2Malus;
         this.playerHiddenRevealed = playerHiddenRevealed;
         this.hiddenTiles = hiddenTiles;
         this.allLegalMoves = allLegalMoves;
@@ -42,7 +45,8 @@ public class SimulatedBoard {
     }
 
     public SaboteurMove getIdealMove() {
-        if (playerMalus > 0) { // play bonus card if player has it or drop a random card
+        if (player1Malus > 0) { // play bonus card if player has it or drop a random card
+            System.out.println("!!!1");
             ArrayList<SaboteurMove> dropCardMoves = new ArrayList<>();
 
             for (SaboteurMove move : allLegalMoves) {
@@ -57,25 +61,66 @@ public class SimulatedBoard {
 
             return dropCardMoves.get(rand.nextInt(dropCardMoves.size())); // drop a random card
         } else {
+            System.out.println("!!!2");
+
             if (certainNuggetLocation) { // if we are certain of the nugget's location
+                System.out.println("!!!3");
+
                 int currentDistanceToGoal = findCurrentShortestDistanceToGoal(); // this is the current shortest distance to the nugget
 
-                SaboteurMove move = shortenDistanceToGoal(currentDistanceToGoal); // this is will return a move if there is a mvoe that can shorten the distance to the nugget
+                System.out.println("!!!4");
 
-                if (move != null) {
-                    return move;
+                if (currentDistanceToGoal == 3) { // winnable in 2 moves, here we only try to shorten the distance if player 2 malus is > 0
+                    if (player2Malus > 0) {
+                        SaboteurMove move = shortenDistanceToGoal(currentDistanceToGoal); // this is will return a move if there is a move that can shorten the distance to the nugget
+
+                        if (move != null) {
+                            return move;
+                        } else {
+                            return allLegalMoves.get(rand.nextInt(allLegalMoves.size()));
+                        }
+                    } else { // do not try to shorten the distance
+                        SaboteurMove move = getNonShorteningMove(currentDistanceToGoal);
+
+                        if (move != null) {
+                            return move;
+                        } else {
+                            return allLegalMoves.get(rand.nextInt(allLegalMoves.size()));
+                        }
+                    }
+                } else if (currentDistanceToGoal == 2) { // winnable in 1 move, here we try to win, if we can't we try to sabotage
+                    SaboteurMove move = shortenDistanceToGoal(currentDistanceToGoal); // this is will return a move if there is a move that can shorten the distance to the nugget
+
+                    if (move != null) {
+                        return move;
+                    } else {
+                        move = getSabotageMove(currentDistanceToGoal);
+                        if (move != null) {
+                            return move;
+                        } else {
+                            return allLegalMoves.get(rand.nextInt(allLegalMoves.size()));
+                        }
+                    }
                 } else {
-                    return allLegalMoves.get(rand.nextInt(allLegalMoves.size()));
+                    SaboteurMove move = shortenDistanceToGoal(currentDistanceToGoal); // this is will return a move if there is a mvoe that can shorten the distance to the nugget
+
+                    if (move != null) {
+                        return move;
+                    } else {
+                        return allLegalMoves.get(rand.nextInt(allLegalMoves.size()));
+                    }
                 }
             } else { // if we are not certain of the nugget's location, play a map card if possible
                 SaboteurMove move = playRandomMapCard();
+
+                System.out.println("!!!5");
 
                 if (move != null) {
                     return move;
                 } else {
                     int currentDistanceToGoal = findCurrentShortestDistanceToGoal(); // this is the current shortest distance to the nugget
 
-                    move = shortenDistanceToGoal(currentDistanceToGoal); // this is will return a move if there is a mvoe that can shorten the distance to the nugget
+                    move = shortenDistanceToGoal(currentDistanceToGoal); // this is will return a move if there is a move that can shorten the distance to the nugget
 
                     if (move != null) {
                         return move;
@@ -87,6 +132,90 @@ public class SimulatedBoard {
         }
     }
 
+    public SaboteurMove getNonShorteningMove(int currentDistanceToGoal) {
+        ArrayList<SaboteurMove> malusMoves = new ArrayList<>();
+        ArrayList<SaboteurMove> tilesMovesNotShortenDistance = new ArrayList<>();
+        ArrayList<SaboteurMove> dropMoves = new ArrayList<>();
+
+        for (SaboteurMove move : allLegalMoves) {
+            if (move.getCardPlayed().getName().contains("Malus")) {
+                malusMoves.add(move);
+            } else if (move.getCardPlayed() instanceof SaboteurTile) {
+                int position[] = move.getPosPlayed();
+                board[position[0]][position[1]] = (SaboteurTile) move.getCardPlayed(); // temporarily add the tile to the board
+
+                int newDistanceToGoal = findCurrentShortestDistanceToGoal(); // find the distance to the goal with the tile deleted
+
+                if (newDistanceToGoal == currentDistanceToGoal) {
+                    tilesMovesNotShortenDistance.add(move);
+                }
+                board[position[0]][position[1]] = null; // reset the board to its initial state
+            } else if (move.getCardPlayed().getName().contains("Drop")) {
+                dropMoves.add(move);
+            }
+        }
+
+        if (malusMoves.size() > 0) {
+            return malusMoves.get(rand.nextInt(malusMoves.size()));
+        } else if (tilesMovesNotShortenDistance.size() > 0) {
+            return tilesMovesNotShortenDistance.get(rand.nextInt(tilesMovesNotShortenDistance.size()));
+        } else if (dropMoves.size() > 0) {
+            return dropMoves.get(rand.nextInt(dropMoves.size()));
+        }
+
+        return null;
+    }
+
+    // this method tries to sabotage the game
+    public SaboteurMove getSabotageMove(int currentDistanceToGoal) {
+        ArrayList<SaboteurMove> malusMoves = new ArrayList<>();
+        ArrayList<SaboteurMove> destroyMoves = new ArrayList<>();
+        ArrayList<SaboteurMove> tilesMovesNotShortenDistance = new ArrayList<>();
+        ArrayList<SaboteurMove> dropMoves = new ArrayList<>();
+
+        for (SaboteurMove move : allLegalMoves) {
+            if (move.getCardPlayed().getName().contains("Malus")) {
+                malusMoves.add(move);
+            } else if (move.getCardPlayed().getName().contains("Destroy")) {
+                int position[] = move.getPosPlayed();
+                SaboteurTile deletedTile = board[position[0]][position[1]];
+
+                board[position[0]][position[1]] = null; // temporarily delete the tile on the board
+                int newDistanceToGoal = findCurrentShortestDistanceToGoal(); // find the distance to the goal with the tile deleted
+
+                if (newDistanceToGoal > currentDistanceToGoal) {
+                    destroyMoves.add(move);
+                }
+                board[position[0]][position[1]] = deletedTile; // reset the board to its initial state
+            } else if (move.getCardPlayed() instanceof SaboteurTile) {
+                int position[] = move.getPosPlayed();
+                board[position[0]][position[1]] = (SaboteurTile) move.getCardPlayed(); // temporarily add the tile to the board
+
+                int newDistanceToGoal = findCurrentShortestDistanceToGoal(); // find the distance to the goal with the tile deleted
+
+                if (newDistanceToGoal == currentDistanceToGoal) {
+                    tilesMovesNotShortenDistance.add(move);
+                }
+                board[position[0]][position[1]] = null; // reset the board to its initial state
+            } else if (move.getCardPlayed().getName().contains("Drop")) {
+                dropMoves.add(move);
+            }
+        }
+
+        if (malusMoves.size() > 0) {
+            return malusMoves.get(rand.nextInt(malusMoves.size()));
+        } else if (destroyMoves.size() > 0) {
+            return destroyMoves.get(rand.nextInt(destroyMoves.size()));
+        } else if (tilesMovesNotShortenDistance.size() > 0) {
+            return tilesMovesNotShortenDistance.get(rand.nextInt(tilesMovesNotShortenDistance.size()));
+        } else if (dropMoves.size() > 0) {
+            return dropMoves.get(rand.nextInt(dropMoves.size()));
+        }
+
+        return null;
+    }
+
+    // this method returns a random map move from allLegalMoves
     public SaboteurMove playRandomMapCard() {
         ArrayList<SaboteurMove> mapMoves = new ArrayList<>();
         for (SaboteurMove move : allLegalMoves) {
@@ -136,14 +265,18 @@ public class SimulatedBoard {
 
     // this method finds the shortest distance to the goal from each of the leaves in the board right now
     public int findCurrentShortestDistanceToGoal() {
-        int shortestDistance = BOARD_SIZE * 2;
-        int currentDistance;
+        Integer shortestDistance = BOARD_SIZE * 2;
+        Integer currentDistance;
 
         ArrayList<TileNodeBFS> leaves = getAllLeaves();
+
         for (TileNodeBFS tile : leaves) {
             currentDistance = distanceToGoal(tile.getPosition());
-            if (currentDistance < shortestDistance) {
-                shortestDistance = currentDistance;
+
+            if (currentDistance != null) {
+                if (currentDistance < shortestDistance) {
+                    shortestDistance = currentDistance;
+                }
             }
         }
 
@@ -257,15 +390,11 @@ public class SimulatedBoard {
         boolean[][] visited = new boolean[BOARD_SIZE][BOARD_SIZE];
         visited[currentPosition[0]][currentPosition[1]] = true; // initialize visited
 
-        System.out.println("here we go");
-
         while (priorityQueue.size() > 0) {
             if (!Arrays.equals(priorityQueue.peek().getPosition(), nuggetPosition)) {
                 // dequeue top of priority queue
                 TileNodeAStar head = priorityQueue.poll();
                 int[] headPositions = head.getPosition();
-
-                System.out.println("!" + headPositions[0] + "!" + headPositions[1]);
 
                 // this will only run on the first iteration of the algorithm
                 // this makes sure we don't go down paths that are not possible due to the tile's configuration

@@ -49,7 +49,8 @@ public class StudentPlayer extends SaboteurPlayer {
             }
         }
 
-        int playerMalus = boardState.getNbMalus(boardState.getTurnPlayer());
+        int player1Malus = boardState.getNbMalus(boardState.getTurnPlayer());
+        int player2Malus = boardState.getNbMalus(1- boardState.getTurnPlayer());
 
         boolean [] playerHiddenRevealed = new boolean[3];
 
@@ -137,23 +138,7 @@ public class StudentPlayer extends SaboteurPlayer {
             certainNuggetLocation = true;
         }
 
-//        boolean firstHiddenSet = false;
-//        if (knowNuggetLocation) {
-//            for (int i = 0; i < 3; i++) {
-//                if (hiddenCards[i] == null) {
-//                    if (!firstHiddenSet) {
-//                        firstHiddenSet = true;
-//                        hiddenCards[i] = new SaboteurTile("hidden1");
-//                    } else {
-//                        hiddenCards[i] = new SaboteurTile("hidden2");
-//                    }
-//                }
-//            }
-//        } else {
-//            hiddenCards = new SaboteurTile[]{new SaboteurTile("hidden1"), new SaboteurTile("nugget"), new SaboteurTile("hidden2")};
-//        }
-
-        SimulatedBoard simulatedBoard = new SimulatedBoard(board, intBoard, playerMalus, playerHiddenRevealed, hiddenCards, allLegalMoves, certainNuggetLocation);
+        SimulatedBoard simulatedBoard = new SimulatedBoard(board, intBoard, player1Malus, player2Malus, playerHiddenRevealed, hiddenCards, allLegalMoves, certainNuggetLocation);
 
         SaboteurMove myMove = simulatedBoard.getIdealMove();
 

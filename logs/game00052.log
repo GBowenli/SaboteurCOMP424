@@ -1,0 +1,68 @@
+# Server version 0.08 running on GBowen:8123
+# Game ID: 52
+# Board class: Saboteur.SaboteurBoard
+# Timeout: 2000
+# First Move Timeout: 30000
+# Date: Tue Apr 07 17:18:41 EDT 2020
+# Player 1: Player-0, '260787692', running on GBowen
+# Player 2: Player-1, 'RandomPlayer', running on GBowen
+START Player-0 260787692
+START Player-1 RandomPlayer
+BoardInit:Tile:8,Tile:7,Tile:0,Map,Map,Tile:2,Tile:3,Tile:0,Destroy,Tile:9,Tile:6,Tile:12,Malus,Tile:10,Tile:6,Tile:8,Tile:8,Tile:7,Tile:0,Map,Tile:6,Tile:5,Tile:9,Tile:6,Bonus,Tile:4,Tile:9,Tile:7,Bonus,Destroy,Tile:6,Map,Tile:9,Tile:1,Malus,Map,Tile:10,Tile:0,Tile:14,Map,Tile:8-Tile:9,Tile:10,Tile:15,Bonus,Tile:5,Tile:5,Tile:11-Tile:8,Bonus,Tile:5,Tile:7,Destroy,Tile:7,Tile:13-Tile:hidden2,Tile:hidden1,Tile:nugget
+Tile:11 4 5 1
+Tile:8 6 5 0
+Tile:5_flip 5 6 1
+Tile:7_flip 4 6 0
+Tile:8 6 4 1
+Map 12 5 0
+Tile:0 7 5 1
+Tile:5 6 3 0
+Tile:15 4 4 1
+Tile:0 7 3 0
+Map 12 3 1
+Drop 5 0 0
+Tile:3_flip 6 6 1
+Destroy 7 3 0
+Tile:6 8 5 1
+Tile:9 8 4 0
+Destroy 8 4 1
+Tile:10 8 4 0
+Drop 1 0 1
+Tile:8 8 3 0
+Tile:5_flip 9 5 1
+Map 12 5 0
+Tile:8 7 3 1
+Tile:5 4 3 0
+Tile:6_flip 7 2 1
+Tile:7 5 3 0
+Tile:6_flip 8 2 1
+Tile:12 9 2 0
+Drop 3 0 1
+Tile:7 9 3 0
+Drop 0 0 1
+Tile:6_flip 7 6 0
+Tile:6 7 7 1
+Map 12 5 0
+Tile:9 9 4 1
+Tile:7_flip 6 2 0
+Tile:9_flip 8 7 1
+Map 12 5 0
+Tile:10 6 1 1
+Destroy 9 3 0
+Tile:14 8 8 1
+Map 12 5 0
+Tile:9 5 4 1
+Tile:7 9 3 0
+Drop 4 0 1
+Tile:1 7 8 0
+Drop 0 0 1
+Drop 0 0 0
+Malus 0 0 1
+Drop 1 0 0
+Tile:8 6 0 1
+Drop 1 0 0
+Drop 1 0 1
+Drop 0 0 0
+Drop 0 0 1
+GAMEOVER DRAW
+# Game ended: Tue Apr 07 17:18:42 EDT 2020
