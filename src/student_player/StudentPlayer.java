@@ -97,14 +97,10 @@ public class StudentPlayer extends SaboteurPlayer {
 
         SimulatedBoard simulatedBoard = new SimulatedBoard(board, intBoard, playerMalus, playerHiddenRevealed, hiddenCards, allLegalMoves);
 
-        //Move myMove = simulatedBoard.getIdealMove();
+        SaboteurMove myMove = simulatedBoard.getIdealMove();
 
+        //SaboteurMove myMove = boardState.getRandomMove();
 
-        SaboteurMove myMove = boardState.getRandomMove();
-
-        if (myMove.getCardPlayed() instanceof SaboteurTile) {
-            System.out.println("!!!" + simulatedBoard.distanceToGoal(myMove.getPosPlayed()));
-        }
 
         // Return your move to be processed by the server.
         return myMove;
