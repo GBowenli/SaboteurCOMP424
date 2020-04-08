@@ -62,12 +62,6 @@ public class StudentPlayer extends SaboteurPlayer {
             }
         }
 
-        // set hiddenCards to the cards we know, the rest of them randomize them
-        ArrayList<String> list =new ArrayList<>();
-        list.add("hidden1");
-        list.add("hidden2");
-        list.add("nugget");
-
         SaboteurTile[] hiddenCards;
 
         int nuggetIndex = -1;
