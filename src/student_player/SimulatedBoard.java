@@ -3,9 +3,7 @@ package student_player;
 import Saboteur.SaboteurMove;
 import Saboteur.cardClasses.SaboteurMap;
 import Saboteur.cardClasses.SaboteurTile;
-import sun.plugin2.message.ShowStatusMessage;
 
-import java.lang.reflect.Array;
 import java.util.*;
 
 public class SimulatedBoard {

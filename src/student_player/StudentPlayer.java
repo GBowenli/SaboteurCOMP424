@@ -68,7 +68,7 @@ public class StudentPlayer extends SaboteurPlayer {
         list.add("hidden2");
         list.add("nugget");
 
-        SaboteurTile[] hiddenCards = new SaboteurTile[3];
+        SaboteurTile[] hiddenCards;
 
         int nuggetIndex = -1;
         for (int i = 0; i < 3; i++) {
