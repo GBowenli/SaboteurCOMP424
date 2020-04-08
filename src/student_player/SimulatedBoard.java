@@ -44,7 +44,6 @@ public class SimulatedBoard {
 
     public SaboteurMove getIdealMove() {
         if (player1Malus > 0) { // play bonus card if player has it or drop a random card
-            System.out.println("!!!1");
             ArrayList<SaboteurMove> dropCardMoves = new ArrayList<>();
 
             for (SaboteurMove move : allLegalMoves) {
@@ -59,14 +58,8 @@ public class SimulatedBoard {
 
             return dropCardMoves.get(rand.nextInt(dropCardMoves.size())); // drop a random card
         } else {
-            System.out.println("!!!2");
-
             if (certainNuggetLocation) { // if we are certain of the nugget's location
-                System.out.println("!!!3");
-
                 int currentDistanceToGoal = findCurrentShortestDistanceToGoal(); // this is the current shortest distance to the nugget
-
-                System.out.println("!!!4");
 
                 if (currentDistanceToGoal == 3) { // winnable in 2 moves, here we only try to shorten the distance if player 2 malus is > 0
                     if (player2Malus > 0) {
@@ -110,8 +103,6 @@ public class SimulatedBoard {
                 }
             } else { // if we are not certain of the nugget's location, play a map card if possible
                 SaboteurMove move = playRandomMapCard();
-
-                System.out.println("!!!5");
 
                 if (move != null) {
                     return move;
